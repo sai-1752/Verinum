@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+storage-data/
+coverage/
+.vite
+e2e/.outbox/
+e2e/.storage/
+e2e/.results/
+mail-outbox/
+playwright-report/

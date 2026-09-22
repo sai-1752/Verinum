@@ -1,0 +1,22 @@
+{
+  "free": {
+    "name": "Free",
+    "priceMonthlyUsd": 0,
+    "limits": { "maxDatasets": 3, "maxUploadBytes": 10485760, "maxRowsPerDataset": 50000, "maxMembers": 3, "aiMessagesPerMonth": 30, "exportsPerMonth": 10, "storageBytes": 104857600 },
+    "features": { "forecast": true, "cohort": false, "export": true, "aiChat": true, "rowExamples": false }
+  },
+  "pro": {
+    "name": "Pro",
+    "priceMonthlyUsd": 29,
+    "stripePriceEnv": "STRIPE_PRICE_PRO",
+    "limits": { "maxDatasets": 50, "maxUploadBytes": 104857600, "maxRowsPerDataset": 1000000, "maxMembers": 10, "aiMessagesPerMonth": 1500, "exportsPerMonth": -1, "storageBytes": 5368709120 },
+    "features": { "forecast": true, "cohort": true, "export": true, "aiChat": true, "rowExamples": true }
+  },
+  "team": {
+    "name": "Team",
+    "priceMonthlyUsd": 99,
+    "stripePriceEnv": "STRIPE_PRICE_TEAM",
+    "limits": { "maxDatasets": 500, "maxUploadBytes": 262144000, "maxRowsPerDataset": 1000000, "maxMembers": 50, "aiMessagesPerMonth": 10000, "exportsPerMonth": -1, "storageBytes": 53687091200 },
+    "features": { "forecast": true, "cohort": true, "export": true, "aiChat": true, "rowExamples": true }
+  }
+}

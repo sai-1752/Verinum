@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+.git
+.env
+e2e
+reference
+docs
+storage-data
+mail-outbox
+**/.results

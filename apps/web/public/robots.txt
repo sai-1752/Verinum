@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /w/
+Disallow: /account
+Disallow: /admin
+Disallow: /api/
+Sitemap: https://verinum.example.com/sitemap.xml

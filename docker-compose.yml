@@ -1,0 +1,94 @@
+# One-command production-like stack:  cp .env.example .env  (edit it)  &&  docker compose up --build
+# Postgres -> migrations (one-shot, as the owner role) -> API (as the restricted runtime role) -> web (nginx).
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: verinum
+      VN_OWNER_PASSWORD: ${VN_OWNER_PASSWORD:?set VN_OWNER_PASSWORD in .env}
+      VN_APP_PASSWORD: ${VN_APP_PASSWORD:?set VN_APP_PASSWORD in .env}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d verinum"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["node", "dist/migrate.mjs"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_MIGRATION_URL: postgres://verinum_owner:${VN_OWNER_PASSWORD}@db:5432/verinum
+      NODE_ENV: production
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    restart: unless-stopped
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    # Listed explicitly (no env_file) so the API container never receives the Postgres superuser or schema-owner
+    # passwords: it connects as the restricted runtime role only.
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "4000"
+      TRUST_PROXY: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgres://verinum_app:${VN_APP_PASSWORD}@db:5432/verinum
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:?set PUBLIC_WEB_URL in .env}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-${PUBLIC_WEB_URL}}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in .env}
+      STORAGE_ENCRYPTION_KEY: ${STORAGE_ENCRYPTION_KEY:?set STORAGE_ENCRYPTION_KEY in .env}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_LOCAL_DIR: /data/storage
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      # With STORAGE_DRIVER=s3 the AWS SDK's normal credential chain applies: prefer an instance/task role; for static
+      # keys add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY here.
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      WORKER_ENABLED: ${WORKER_ENABLED:-true}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      FRAME_CACHE_MB: ${FRAME_CACHE_MB:-512}
+      MAIL_DRIVER: ${MAIL_DRIVER:-smtp}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Verinum <no-reply@localhost>}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-5}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      BILLING_PROVIDER: ${BILLING_PROVIDER:-none}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_PRO: ${STRIPE_PRICE_PRO:-}
+      STRIPE_PRICE_TEAM: ${STRIPE_PRICE_TEAM:-}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+    volumes:
+      - storage:/data/storage
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_UPSTREAM: http://api:4000
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  dbdata:
+  storage:

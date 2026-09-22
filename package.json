@@ -1,0 +1,39 @@
+{
+  "name": "verinum",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Verinum — grounded AI data analyst SaaS",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:tz": "TZ=UTC vitest run packages/core && TZ=America/Los_Angeles vitest run packages/core && TZ=Asia/Kolkata vitest run packages/core",
+    "test:watch": "vitest",
+    "build": "npm run build --workspaces --if-present",
+    "dev:api": "npm run dev -w @verinum/api",
+    "dev:web": "npm run dev -w @verinum/web",
+    "db:migrate": "npm run migrate -w @verinum/api",
+    "lint": "eslint .",
+    "build:e2e": "npm run build -w @verinum/api && npm run build -w @verinum/web",
+    "test:e2e": "npm run build:e2e && playwright test -c e2e/playwright.config.ts",
+    "test:e2e:run": "playwright test -c e2e/playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0",
+    "vitest": "^2.1.8"
+  }
+}
