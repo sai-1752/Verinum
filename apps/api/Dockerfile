@@ -27,7 +27,6 @@ COPY apps/api/migrations ./apps/api/migrations
 COPY apps/api/assets ./apps/api/assets
 COPY apps/api/package.json ./apps/api/package.json
 WORKDIR /app/apps/api
-USER node
 EXPOSE 4000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
